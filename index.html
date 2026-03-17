@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flight Price Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: '#1e1e2e',
+            card: '#2a2a3c',
+            border: '#3a3a4c',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #13131f; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .price-cell { transition: transform 0.1s, box-shadow 0.1s; }
+    .price-cell:hover { transform: scale(1.08); box-shadow: 0 0 12px rgba(255,255,255,0.15); z-index: 10; position: relative; }
+    .grid-container { overflow-x: auto; }
+    .grid-container::-webkit-scrollbar { height: 8px; }
+    .grid-container::-webkit-scrollbar-track { background: #1e1e2e; border-radius: 4px; }
+    .grid-container::-webkit-scrollbar-thumb { background: #4a4a5c; border-radius: 4px; }
+    [data-tooltip] { position: relative; }
+    [data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: #fff; padding: 4px 10px; border-radius: 6px;
+      font-size: 12px; white-space: nowrap; z-index: 20; border: 1px solid #3a3a4c;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+  <header class="max-w-7xl mx-auto mb-6">
+    <h1 class="text-3xl md:text-4xl font-bold text-white">&#9992; Flight Price Dashboard</h1>
+    <p class="text-gray-400 mt-1">Cheapest fares &middot; Mar 17 &ndash; Apr 6, 2026 &middot; Prices in CAD &middot; <span class="text-gray-500">Last updated: Mar 17, 2026</span></p>
+    <p class="mt-2 text-sm text-yellow-400/80 bg-yellow-400/10 inline-block px-3 py-1 rounded-md">YHZ&rarr;BOS prices are live from Google Flights. Other routes are estimates &mdash; click route for live prices.</p>
+  </header>
+
+  <!-- Route filters -->
+  <div class="max-w-7xl mx-auto mb-4">
+    <details class="bg-[#1e1e2e] rounded-lg border border-[#3a3a4c] p-3" open>
+      <summary class="cursor-pointer text-sm font-semibold text-gray-300 select-none">Filter Routes</summary>
+      <div id="filters" class="flex flex-wrap gap-3 mt-3"></div>
+    </details>
+  </div>
+
+  <!-- Summary cards -->
+  <div id="summary-cards" class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"></div>
+
+  <!-- Heatmap grid -->
+  <div class="max-w-7xl mx-auto bg-[#1e1e2e] rounded-xl border border-[#3a3a4c] p-4 mb-6">
+    <h2 class="text-lg font-semibold text-white mb-3">Price Calendar</h2>
+    <div class="grid-container">
+      <table id="heatmap" class="w-full text-xs md:text-sm"></table>
+    </div>
+  </div>
+
+  <!-- Bar chart -->
+  <div class="max-w-7xl mx-auto bg-[#1e1e2e] rounded-xl border border-[#3a3a4c] p-4 mb-8">
+    <h2 class="text-lg font-semibold text-white mb-3">Cheapest Price by Route</h2>
+    <div class="relative" style="max-height:350px">
+      <canvas id="barChart"></canvas>
+    </div>
+  </div>
+
+<script>
+const flightData = {
+  routes: [
+    { id: "yhz-bos", from: "Halifax (YHZ)", to: "Boston (BOS)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWUhacgcIARIDQk9T&curr=CAD", prices: { "Mar 17": 676, "Mar 18": 640, "Mar 19": 650, "Mar 20": 613, "Mar 21": 613, "Mar 22": 613, "Mar 23": 613, "Mar 24": 488, "Mar 25": 488, "Mar 26": 488, "Mar 27": 450, "Mar 28": 488, "Mar 29": 488, "Mar 30": 488, "Mar 31": 513, "Apr 1": 513, "Apr 2": 513, "Apr 3": 488, "Apr 4": 488, "Apr 5": 488, "Apr 6": 513 } },
+    { id: "bos-rsw", from: "Boston (BOS)", to: "Fort Myers (RSW)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDBOSrcgcIARIDUlNX&curr=CAD", prices: { "Mar 17": 580, "Mar 18": 570, "Mar 19": 640, "Mar 20": 660, "Mar 21": 740, "Mar 22": 670, "Mar 23": 590, "Mar 24": 575, "Mar 25": 565, "Mar 26": 635, "Mar 27": 650, "Mar 28": 730, "Mar 29": 665, "Mar 30": 585, "Mar 31": 570, "Apr 1": 560, "Apr 2": 630, "Apr 3": 655, "Apr 4": 720, "Apr 5": 660, "Apr 6": 580 } },
+    { id: "yhz-yul", from: "Halifax (YHZ)", to: "Montreal (YUL)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWUhacgcIARIDWVVM&curr=CAD", prices: { "Mar 17": 142, "Mar 18": 138, "Mar 19": 160, "Mar 20": 168, "Mar 21": 185, "Mar 22": 170, "Mar 23": 145, "Mar 24": 140, "Mar 25": 135, "Mar 26": 158, "Mar 27": 165, "Mar 28": 188, "Mar 29": 172, "Mar 30": 148, "Mar 31": 143, "Apr 1": 137, "Apr 2": 162, "Apr 3": 170, "Apr 4": 190, "Apr 5": 168, "Apr 6": 146 } },
+    { id: "yhz-yyz", from: "Halifax (YHZ)", to: "Toronto (YYZ)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWUhacgcIARIDWVla&curr=CAD", prices: { "Mar 17": 172, "Mar 18": 165, "Mar 19": 192, "Mar 20": 200, "Mar 21": 225, "Mar 22": 205, "Mar 23": 175, "Mar 24": 168, "Mar 25": 162, "Mar 26": 195, "Mar 27": 205, "Mar 28": 230, "Mar 29": 200, "Mar 30": 178, "Mar 31": 170, "Apr 1": 160, "Apr 2": 190, "Apr 3": 198, "Apr 4": 228, "Apr 5": 202, "Apr 6": 174 } },
+    { id: "yyz-bgi", from: "Toronto (YYZ)", to: "Barbados (BGI)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWVlacgcIARIDBGdJ&curr=CAD", prices: { "Mar 17": 620, "Mar 18": 600, "Mar 19": 690, "Mar 20": 720, "Mar 21": 810, "Mar 22": 740, "Mar 23": 630, "Mar 24": 610, "Mar 25": 590, "Mar 26": 680, "Mar 27": 710, "Mar 28": 800, "Mar 29": 730, "Mar 30": 625, "Mar 31": 615, "Apr 1": 595, "Apr 2": 685, "Apr 3": 715, "Apr 4": 790, "Apr 5": 735, "Apr 6": 620 } },
+    { id: "yyz-bda", from: "Toronto (YYZ)", to: "Bermuda (BDA)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWVlacgcIARIDBkRB&curr=CAD", prices: { "Mar 17": 400, "Mar 18": 390, "Mar 19": 445, "Mar 20": 460, "Mar 21": 520, "Mar 22": 475, "Mar 23": 405, "Mar 24": 395, "Mar 25": 385, "Mar 26": 440, "Mar 27": 455, "Mar 28": 515, "Mar 29": 470, "Mar 30": 400, "Mar 31": 398, "Apr 1": 388, "Apr 2": 442, "Apr 3": 458, "Apr 4": 510, "Apr 5": 468, "Apr 6": 402 } },
+    { id: "yul-bda", from: "Montreal (YUL)", to: "Bermuda (BDA)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWVVMcgcIARIDBkRB&curr=CAD", prices: { "Mar 17": 460, "Mar 18": 448, "Mar 19": 510, "Mar 20": 530, "Mar 21": 595, "Mar 22": 545, "Mar 23": 465, "Mar 24": 455, "Mar 25": 445, "Mar 26": 505, "Mar 27": 525, "Mar 28": 590, "Mar 29": 540, "Mar 30": 462, "Mar 31": 458, "Apr 1": 442, "Apr 2": 508, "Apr 3": 528, "Apr 4": 585, "Apr 5": 538, "Apr 6": 460 } },
+    { id: "yul-bgi", from: "Montreal (YUL)", to: "Barbados (BGI)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWVVMcgcIARIDBGdJ&curr=CAD", prices: { "Mar 17": 555, "Mar 18": 540, "Mar 19": 615, "Mar 20": 640, "Mar 21": 720, "Mar 22": 660, "Mar 23": 560, "Mar 24": 550, "Mar 25": 535, "Mar 26": 610, "Mar 27": 635, "Mar 28": 715, "Mar 29": 655, "Mar 30": 558, "Mar 31": 552, "Apr 1": 538, "Apr 2": 612, "Apr 3": 638, "Apr 4": 710, "Apr 5": 652, "Apr 6": 555 } }
+  ]
+};
+
+const dates = Object.keys(flightData.routes[0].prices);
+let visibleRoutes = new Set(flightData.routes.map(r => r.id));
+let chartInstance = null;
+
+function getRouteStats(route) {
+  const entries = Object.entries(route.prices).filter(([, p]) => p !== null);
+  if (!entries.length) return { min: null, max: null, minDate: null };
+  const min = Math.min(...entries.map(([, p]) => p));
+  const max = Math.max(...entries.map(([, p]) => p));
+  const minDate = entries.find(([, p]) => p === min)[0];
+  return { min, max, minDate };
+}
+
+function priceColor(price, min, max) {
+  if (price === null) return 'bg-gray-700/50 text-gray-500';
+  if (min === max) return 'bg-emerald-600/70 text-white';
+  const ratio = (price - min) / (max - min);
+  if (ratio <= 0.33) return 'bg-emerald-600/70 text-white';
+  if (ratio <= 0.66) return 'bg-yellow-600/70 text-white';
+  return 'bg-red-600/60 text-white';
+}
+
+function renderFilters() {
+  const el = document.getElementById('filters');
+  el.innerHTML = flightData.routes.map(r => `
+    <label class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+      <input type="checkbox" class="rounded bg-gray-700 border-gray-600 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0" data-route="${r.id}" ${visibleRoutes.has(r.id) ? 'checked' : ''}>
+      <span>${r.from} &rarr; ${r.to}</span>
+    </label>
+  `).join('');
+  el.querySelectorAll('input').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) visibleRoutes.add(cb.dataset.route);
+      else visibleRoutes.delete(cb.dataset.route);
+      render();
+    });
+  });
+}
+
+function renderSummaryCards() {
+  const el = document.getElementById('summary-cards');
+  el.innerHTML = flightData.routes.filter(r => visibleRoutes.has(r.id)).map(r => {
+    const { min, minDate } = getRouteStats(r);
+    const url = r.link;
+    return `
+      <div class="bg-[#2a2a3c] rounded-lg border border-[#3a3a4c] p-4 hover:border-indigo-500/50 transition-colors">
+        <div class="text-xs text-gray-400 mb-1 truncate">${r.from} &rarr; ${r.to}</div>
+        <div class="text-2xl font-bold ${min ? 'text-emerald-400' : 'text-gray-500'}">${min ? '$' + min : 'TBD'}</div>
+        <div class="text-xs text-gray-500 mt-1">${minDate || 'No data yet'}</div>
+        <a href="${url}" target="_blank" rel="noopener" class="text-xs text-indigo-400 hover:text-indigo-300 mt-2 inline-block">Google Flights &rarr;</a>
+      </div>`;
+  }).join('');
+}
+
+function renderHeatmap() {
+  const table = document.getElementById('heatmap');
+  const visible = flightData.routes.filter(r => visibleRoutes.has(r.id));
+  const allPrices = visible.flatMap(r => Object.values(r.prices).filter(p => p !== null));
+  const globalMin = allPrices.length ? Math.min(...allPrices) : 0;
+  const globalMax = allPrices.length ? Math.max(...allPrices) : 0;
+
+  let html = '<thead><tr><th class="sticky left-0 bg-[#1e1e2e] z-10 text-left text-gray-400 font-medium px-2 py-2 min-w-[140px]">Route</th>';
+  dates.forEach(d => {
+    const short = d.replace('Mar ', '3/').replace('Apr ', '4/');
+    html += `<th class="text-gray-400 font-medium px-1 py-2 text-center whitespace-nowrap">${short}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  visible.forEach(r => {
+    const { min, max } = getRouteStats(r);
+    html += `<tr><td class="sticky left-0 bg-[#1e1e2e] z-10 px-2 py-2 text-xs font-medium whitespace-nowrap"><a href="${r.link}" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300">${r.from.split(' ')[0]} &rarr; ${r.to.split(' ')[0]}</a></td>`;
+    dates.forEach(d => {
+      const p = r.prices[d];
+      const color = priceColor(p, min, max);
+      const tooltip = p !== null ? `$${p} CAD on ${d}` : 'Data not yet loaded';
+      const display = p !== null ? '$' + p : '&mdash;';
+      html += `<td class="px-1 py-1 text-center"><div class="price-cell ${color} rounded-md px-2 py-2 text-xs font-medium cursor-default" data-tooltip="${tooltip}">${display}</div></td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function renderChart() {
+  const visible = flightData.routes.filter(r => visibleRoutes.has(r.id));
+  const labels = visible.map(r => `${r.from.split(' ')[0]} → ${r.to.split(' ')[0]}`);
+  const data = visible.map(r => getRouteStats(r).min);
+  const colors = data.map(p => p ? 'rgba(99, 204, 163, 0.8)' : 'rgba(107, 114, 128, 0.4)');
+
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Cheapest Price (CAD)',
+        data: data.map(d => d || 0),
+        backgroundColor: colors,
+        borderColor: colors.map(c => c.replace('0.8', '1').replace('0.4', '0.6')),
+        borderWidth: 1,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.raw ? `$${ctx.raw} CAD` : 'No data'
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#9ca3af', font: { size: 11 } }, grid: { color: '#2a2a3c' } },
+        y: { ticks: { color: '#9ca3af', callback: v => '$' + v }, grid: { color: '#2a2a3c' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function render() {
+  renderSummaryCards();
+  renderHeatmap();
+  renderChart();
+}
+
+renderFilters();
+render();
+</script>
+</body>
+</html>
