@@ -36,14 +36,24 @@
       font-size: 12px; white-space: nowrap; z-index: 20; border: 1px solid #3a3a4c;
       pointer-events: none;
     }
+    .airline-badge {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
 
   <header class="max-w-7xl mx-auto mb-6">
     <h1 class="text-3xl md:text-4xl font-bold text-white">&#9992; Flight Price Dashboard</h1>
-    <p class="text-gray-400 mt-1">Cheapest fares &middot; Mar 17 &ndash; Apr 6, 2026 &middot; Prices in CAD &middot; <span class="text-gray-500">Last updated: Mar 17, 2026</span></p>
-    <p class="mt-2 text-sm text-yellow-400/80 bg-yellow-400/10 inline-block px-3 py-1 rounded-md">YHZ&rarr;BOS prices are live from Google Flights. Other routes are estimates &mdash; click route for live prices.</p>
+    <p class="text-gray-400 mt-1">Cheapest fares &middot; Mar 26 &ndash; Apr 15, 2026 &middot; Prices in CAD &middot; <span class="text-gray-500">Last updated: Mar 21, 2026</span></p>
+    <p class="mt-2 text-sm text-yellow-400/80 bg-yellow-400/10 inline-block px-3 py-1 rounded-md">YHZ&rarr;BOS, YHZ&rarr;RSW, YHZ&rarr;BDA anchor prices are live from Google Flights (Mar 21). Other routes are estimates &mdash; click route for live prices.</p>
   </header>
 
   <!-- Route filters -->
@@ -76,14 +86,15 @@
 <script>
 const flightData = {
   routes: [
-    { id: "yhz-bos", from: "Halifax (YHZ)", to: "Boston (BOS)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWUhacgcIARIDQk9T&curr=CAD", prices: { "Mar 17": 676, "Mar 18": 640, "Mar 19": 650, "Mar 20": 613, "Mar 21": 613, "Mar 22": 613, "Mar 23": 613, "Mar 24": 488, "Mar 25": 488, "Mar 26": 488, "Mar 27": 450, "Mar 28": 488, "Mar 29": 488, "Mar 30": 488, "Mar 31": 513, "Apr 1": 513, "Apr 2": 513, "Apr 3": 488, "Apr 4": 488, "Apr 5": 488, "Apr 6": 513 } },
-    { id: "bos-rsw", from: "Boston (BOS)", to: "Fort Myers (RSW)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDBOSrcgcIARIDUlNX&curr=CAD", prices: { "Mar 17": 580, "Mar 18": 570, "Mar 19": 640, "Mar 20": 660, "Mar 21": 740, "Mar 22": 670, "Mar 23": 590, "Mar 24": 575, "Mar 25": 565, "Mar 26": 635, "Mar 27": 650, "Mar 28": 730, "Mar 29": 665, "Mar 30": 585, "Mar 31": 570, "Apr 1": 560, "Apr 2": 630, "Apr 3": 655, "Apr 4": 720, "Apr 5": 660, "Apr 6": 580 } },
-    { id: "yhz-yul", from: "Halifax (YHZ)", to: "Montreal (YUL)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWUhacgcIARIDWVVM&curr=CAD", prices: { "Mar 17": 142, "Mar 18": 138, "Mar 19": 160, "Mar 20": 168, "Mar 21": 185, "Mar 22": 170, "Mar 23": 145, "Mar 24": 140, "Mar 25": 135, "Mar 26": 158, "Mar 27": 165, "Mar 28": 188, "Mar 29": 172, "Mar 30": 148, "Mar 31": 143, "Apr 1": 137, "Apr 2": 162, "Apr 3": 170, "Apr 4": 190, "Apr 5": 168, "Apr 6": 146 } },
-    { id: "yhz-yyz", from: "Halifax (YHZ)", to: "Toronto (YYZ)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWUhacgcIARIDWVla&curr=CAD", prices: { "Mar 17": 172, "Mar 18": 165, "Mar 19": 192, "Mar 20": 200, "Mar 21": 225, "Mar 22": 205, "Mar 23": 175, "Mar 24": 168, "Mar 25": 162, "Mar 26": 195, "Mar 27": 205, "Mar 28": 230, "Mar 29": 200, "Mar 30": 178, "Mar 31": 170, "Apr 1": 160, "Apr 2": 190, "Apr 3": 198, "Apr 4": 228, "Apr 5": 202, "Apr 6": 174 } },
-    { id: "yyz-bgi", from: "Toronto (YYZ)", to: "Barbados (BGI)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWVlacgcIARIDBGdJ&curr=CAD", prices: { "Mar 17": 620, "Mar 18": 600, "Mar 19": 690, "Mar 20": 720, "Mar 21": 810, "Mar 22": 740, "Mar 23": 630, "Mar 24": 610, "Mar 25": 590, "Mar 26": 680, "Mar 27": 710, "Mar 28": 800, "Mar 29": 730, "Mar 30": 625, "Mar 31": 615, "Apr 1": 595, "Apr 2": 685, "Apr 3": 715, "Apr 4": 790, "Apr 5": 735, "Apr 6": 620 } },
-    { id: "yyz-bda", from: "Toronto (YYZ)", to: "Bermuda (BDA)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWVlacgcIARIDBkRB&curr=CAD", prices: { "Mar 17": 400, "Mar 18": 390, "Mar 19": 445, "Mar 20": 460, "Mar 21": 520, "Mar 22": 475, "Mar 23": 405, "Mar 24": 395, "Mar 25": 385, "Mar 26": 440, "Mar 27": 455, "Mar 28": 515, "Mar 29": 470, "Mar 30": 400, "Mar 31": 398, "Apr 1": 388, "Apr 2": 442, "Apr 3": 458, "Apr 4": 510, "Apr 5": 468, "Apr 6": 402 } },
-    { id: "yul-bda", from: "Montreal (YUL)", to: "Bermuda (BDA)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWVVMcgcIARIDBkRB&curr=CAD", prices: { "Mar 17": 460, "Mar 18": 448, "Mar 19": 510, "Mar 20": 530, "Mar 21": 595, "Mar 22": 545, "Mar 23": 465, "Mar 24": 455, "Mar 25": 445, "Mar 26": 505, "Mar 27": 525, "Mar 28": 590, "Mar 29": 540, "Mar 30": 462, "Mar 31": 458, "Apr 1": 442, "Apr 2": 508, "Apr 3": 528, "Apr 4": 585, "Apr 5": 538, "Apr 6": 460 } },
-    { id: "yul-bgi", from: "Montreal (YUL)", to: "Barbados (BGI)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTE3agcIARIDWVVMcgcIARIDBGdJ&curr=CAD", prices: { "Mar 17": 555, "Mar 18": 540, "Mar 19": 615, "Mar 20": 640, "Mar 21": 720, "Mar 22": 660, "Mar 23": 560, "Mar 24": 550, "Mar 25": 535, "Mar 26": 610, "Mar 27": 635, "Mar 28": 715, "Mar 29": 655, "Mar 30": 558, "Mar 31": 552, "Apr 1": 538, "Apr 2": 612, "Apr 3": 638, "Apr 4": 710, "Apr 5": 652, "Apr 6": 555 } }
+    { id: "yhz-bos", from: "Halifax (YHZ)", to: "Boston (BOS)", airline: "Air Canada / United", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTI2agcIARIDWUhacgcIARIDQk9T&curr=CAD", prices: { "Mar 26": 603, "Mar 27": 556, "Mar 28": 603, "Mar 29": 603, "Mar 30": 603, "Mar 31": 634, "Apr 1": 634, "Apr 2": 634, "Apr 3": 603, "Apr 4": 603, "Apr 5": 603, "Apr 6": 634, "Apr 7": 603, "Apr 8": 603, "Apr 9": 634, "Apr 10": 634, "Apr 11": 634, "Apr 12": 603, "Apr 13": 556, "Apr 14": 556, "Apr 15": 603 } },
+    { id: "yhz-rsw", from: "Halifax (YHZ)", to: "Fort Myers (RSW)", airline: "Porter / American", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTI2agcIARIDWUhacgcIARIDUlNX&curr=CAD", prices: { "Mar 26": 489, "Mar 27": 500, "Mar 28": 562, "Mar 29": 512, "Mar 30": 450, "Mar 31": 438, "Apr 1": 432, "Apr 2": 489, "Apr 3": 500, "Apr 4": 555, "Apr 5": 510, "Apr 6": 448, "Apr 7": 435, "Apr 8": 430, "Apr 9": 485, "Apr 10": 498, "Apr 11": 552, "Apr 12": 505, "Apr 13": 445, "Apr 14": 432, "Apr 15": 489 } },
+    { id: "yhz-bda", from: "Halifax (YHZ)", to: "Bermuda (BDA)", airline: "United (via EWR)", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTI2agcIARIDWUhacgcIARIEQkRB&curr=CAD", prices: { "Mar 26": 529, "Mar 27": 545, "Mar 28": 610, "Mar 29": 575, "Mar 30": 535, "Mar 31": 520, "Apr 1": 515, "Apr 2": 529, "Apr 3": 548, "Apr 4": 615, "Apr 5": 580, "Apr 6": 538, "Apr 7": 525, "Apr 8": 518, "Apr 9": 529, "Apr 10": 545, "Apr 11": 608, "Apr 12": 572, "Apr 13": 530, "Apr 14": 518, "Apr 15": 529 } },
+    { id: "yhz-yul", from: "Halifax (YHZ)", to: "Montreal (YUL)", airline: "Air Canada / Porter", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTI2agcIARIDWUhacgcIARIDWVVM&curr=CAD", prices: { "Mar 26": 158, "Mar 27": 165, "Mar 28": 188, "Mar 29": 172, "Mar 30": 148, "Mar 31": 143, "Apr 1": 137, "Apr 2": 162, "Apr 3": 170, "Apr 4": 190, "Apr 5": 168, "Apr 6": 146, "Apr 7": 140, "Apr 8": 135, "Apr 9": 155, "Apr 10": 163, "Apr 11": 185, "Apr 12": 170, "Apr 13": 145, "Apr 14": 138, "Apr 15": 158 } },
+    { id: "yhz-yyz", from: "Halifax (YHZ)", to: "Toronto (YYZ)", airline: "Air Canada / Porter", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTI2agcIARIDWUhacgcIARIDWVla&curr=CAD", prices: { "Mar 26": 195, "Mar 27": 205, "Mar 28": 230, "Mar 29": 200, "Mar 30": 178, "Mar 31": 170, "Apr 1": 160, "Apr 2": 190, "Apr 3": 198, "Apr 4": 228, "Apr 5": 202, "Apr 6": 174, "Apr 7": 168, "Apr 8": 158, "Apr 9": 188, "Apr 10": 196, "Apr 11": 225, "Apr 12": 198, "Apr 13": 175, "Apr 14": 165, "Apr 15": 195 } },
+    { id: "yyz-bgi", from: "Toronto (YYZ)", to: "Barbados (BGI)", airline: "Air Canada / WestJet", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTI2agcIARIDWVlacgcIARIEQkdJ&curr=CAD", prices: { "Mar 26": 680, "Mar 27": 710, "Mar 28": 800, "Mar 29": 730, "Mar 30": 625, "Mar 31": 615, "Apr 1": 595, "Apr 2": 685, "Apr 3": 715, "Apr 4": 790, "Apr 5": 735, "Apr 6": 620, "Apr 7": 610, "Apr 8": 590, "Apr 9": 675, "Apr 10": 705, "Apr 11": 785, "Apr 12": 728, "Apr 13": 618, "Apr 14": 605, "Apr 15": 680 } },
+    { id: "yyz-bda", from: "Toronto (YYZ)", to: "Bermuda (BDA)", airline: "Air Canada / United", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTI2agcIARIDWVlacgcIARIEQkRB&curr=CAD", prices: { "Mar 26": 440, "Mar 27": 455, "Mar 28": 515, "Mar 29": 470, "Mar 30": 400, "Mar 31": 398, "Apr 1": 388, "Apr 2": 442, "Apr 3": 458, "Apr 4": 510, "Apr 5": 468, "Apr 6": 402, "Apr 7": 395, "Apr 8": 385, "Apr 9": 438, "Apr 10": 452, "Apr 11": 508, "Apr 12": 465, "Apr 13": 398, "Apr 14": 390, "Apr 15": 440 } },
+    { id: "yul-bda", from: "Montreal (YUL)", to: "Bermuda (BDA)", airline: "Air Canada / United", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTI2agcIARIDWVVMcgcIARIEQkRB&curr=CAD", prices: { "Mar 26": 505, "Mar 27": 525, "Mar 28": 590, "Mar 29": 540, "Mar 30": 462, "Mar 31": 458, "Apr 1": 442, "Apr 2": 508, "Apr 3": 528, "Apr 4": 585, "Apr 5": 538, "Apr 6": 460, "Apr 7": 452, "Apr 8": 440, "Apr 9": 502, "Apr 10": 522, "Apr 11": 582, "Apr 12": 535, "Apr 13": 458, "Apr 14": 445, "Apr 15": 505 } },
+    { id: "yul-bgi", from: "Montreal (YUL)", to: "Barbados (BGI)", airline: "Air Canada / WestJet", link: "https://www.google.com/travel/flights/search?tfs=CBwQAhoeEgoyMDI2LTAzLTI2agcIARIDWVVMcgcIARIEQkdJ&curr=CAD", prices: { "Mar 26": 610, "Mar 27": 635, "Mar 28": 715, "Mar 29": 655, "Mar 30": 558, "Mar 31": 552, "Apr 1": 538, "Apr 2": 612, "Apr 3": 638, "Apr 4": 710, "Apr 5": 652, "Apr 6": 555, "Apr 7": 548, "Apr 8": 532, "Apr 9": 605, "Apr 10": 630, "Apr 11": 708, "Apr 12": 648, "Apr 13": 552, "Apr 14": 540, "Apr 15": 610 } }
   ]
 };
 
@@ -136,6 +147,7 @@ function renderSummaryCards() {
         <div class="text-xs text-gray-400 mb-1 truncate">${r.from} &rarr; ${r.to}</div>
         <div class="text-2xl font-bold ${min ? 'text-emerald-400' : 'text-gray-500'}">${min ? '$' + min : 'TBD'}</div>
         <div class="text-xs text-gray-500 mt-1">${minDate || 'No data yet'}</div>
+        <div class="airline-badge mt-1">${r.airline}</div>
         <a href="${url}" target="_blank" rel="noopener" class="text-xs text-indigo-400 hover:text-indigo-300 mt-2 inline-block">Google Flights &rarr;</a>
       </div>`;
   }).join('');
@@ -148,7 +160,7 @@ function renderHeatmap() {
   const globalMin = allPrices.length ? Math.min(...allPrices) : 0;
   const globalMax = allPrices.length ? Math.max(...allPrices) : 0;
 
-  let html = '<thead><tr><th class="sticky left-0 bg-[#1e1e2e] z-10 text-left text-gray-400 font-medium px-2 py-2 min-w-[140px]">Route</th>';
+  let html = '<thead><tr><th class="sticky left-0 bg-[#1e1e2e] z-10 text-left text-gray-400 font-medium px-2 py-2 min-w-[160px]">Route</th>';
   dates.forEach(d => {
     const short = d.replace('Mar ', '3/').replace('Apr ', '4/');
     html += `<th class="text-gray-400 font-medium px-1 py-2 text-center whitespace-nowrap">${short}</th>`;
@@ -157,7 +169,7 @@ function renderHeatmap() {
 
   visible.forEach(r => {
     const { min, max } = getRouteStats(r);
-    html += `<tr><td class="sticky left-0 bg-[#1e1e2e] z-10 px-2 py-2 text-xs font-medium whitespace-nowrap"><a href="${r.link}" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300">${r.from.split(' ')[0]} &rarr; ${r.to.split(' ')[0]}</a></td>`;
+    html += `<tr><td class="sticky left-0 bg-[#1e1e2e] z-10 px-2 py-2 text-xs font-medium whitespace-nowrap"><a href="${r.link}" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300">${r.from.split(' ')[0]} &rarr; ${r.to.split(' ')[0]}</a><br><span class="airline-badge">${r.airline}</span></td>`;
     dates.forEach(d => {
       const p = r.prices[d];
       const color = priceColor(p, min, max);
